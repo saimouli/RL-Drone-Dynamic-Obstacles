@@ -10,6 +10,8 @@
   <run_depend>cvg_sim_gazebo</run_depend>
   <run_depend>cvg_sim_gazebo_plugins</run_depend>
   <run_depend>message_to_tf</run_depend>
+  <run_depend>realsense2_camera</run_depend>
+  <run_depend>realsense2_description</run_depend>
 
   <export>
     <metapackage/>

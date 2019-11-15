@@ -1,0 +1,5 @@
+<launch>
+    <rosparam command="load" file="$(find drone_training)/config/turtlebot_deepq.yaml" />
+    <!-- Launch the training system -->
+    <node pkg="drone_training" name="turtlebot_gym" type="start_training_ppo.py" output="screen"/> -->
+</launch>

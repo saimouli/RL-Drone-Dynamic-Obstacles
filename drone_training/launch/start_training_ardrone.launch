@@ -1,0 +1,5 @@
+<launch>
+    <rosparam command="load" file="$(find drone_training)/config/ar_drone_params.yaml" />
+    <!-- Launch the training system -->
+    <node pkg="drone_training" name="parrot_gym" type="start_training_ardrone.py" output="screen"/> 
+</launch>

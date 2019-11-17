@@ -75,14 +75,14 @@ class ParrotDroneEnv(robot_gazebo_env.RobotGazeboEnv):
         self._check_all_sensors_ready()
 
         # We Start all the ROS related Subscribers and publishers
-        rospy.Subscriber("/ardrone/bottom/image_raw", Image, self._down_camera_rgb_image_raw_callback)
-        rospy.Subscriber("/ardrone/front/image_raw", Image, self._front_camera_rgb_image_raw_callback)
+        # rospy.Subscriber("/ardrone/bottom/image_raw", Image, self._down_camera_rgb_image_raw_callback) #Removed bottom facing camera as we do not need it (Utsav)
+        # rospy.Subscriber("/ardrone/front/image_raw", Image, self._front_camera_rgb_image_raw_callback)
         rospy.Subscriber("/ardrone/imu", Imu, self._imu_callback)
         rospy.Subscriber("/ardrone/sonar", Range, self._sonar_callback)
-        rospy.Subscriber("/gazebo/link_states", LinkStates, self._gt_pose_callback)
-        rospy.Subscriber("/cmd_vel", Twist, self._gt_vel_callback)
+        rospy.Subscriber("/ground_truth/state", Odometry, self._gt_pose_callback)
+        rospy.Subscriber("/ground_truth/state", Odometry, self._gt_vel_callback)
         # Subscriber added by Utsav
-        rospy.Subscriber("/DEPTH_TOPIC", DEPTH_TOPIC_TYPE, self._depth_camera_callback)
+        rospy.Subscriber("/r200/camera/depth/image_raw", Image, self._depth_camera_callback)
   
 
 
@@ -114,8 +114,8 @@ class ParrotDroneEnv(robot_gazebo_env.RobotGazeboEnv):
 
     def _check_all_sensors_ready(self):
         rospy.logdebug("START ALL SENSORS READY")
-        self._check_down_camera_rgb_image_raw_ready()
-        self._check_front_camera_rgb_image_raw_ready()
+        # self._check_down_camera_rgb_image_raw_ready()
+        # self._check_front_camera_rgb_image_raw_ready()
         self._check_imu_ready()
         self._check_sonar_ready()
         self._check_gt_pose_ready()
@@ -128,30 +128,30 @@ class ParrotDroneEnv(robot_gazebo_env.RobotGazeboEnv):
         
     
         
-    def _check_front_camera_rgb_image_raw_ready(self):
-        self.front_camera_rgb_image_raw = None
-        rospy.logdebug("Waiting for /ardrone/front_camera/image_raw to be READY...")
-        while self.front_camera_rgb_image_raw is None and not rospy.is_shutdown():
-            try:
-                self.front_camera_rgb_image_raw = rospy.wait_for_message("/ardrone/front/image_raw", Image, timeout=5.0)
-                rospy.logdebug("Current /ardrone/front/image_raw READY=>")
+    # def _check_front_camera_rgb_image_raw_ready(self):
+    #     self.front_camera_rgb_image_raw = None
+    #     rospy.logdebug("Waiting for /ardrone/front_camera/image_raw to be READY...")
+    #     while self.front_camera_rgb_image_raw is None and not rospy.is_shutdown():
+    #         try:
+    #             self.front_camera_rgb_image_raw = rospy.wait_for_message("/ardrone/front/image_raw", Image, timeout=5.0)
+    #             rospy.logdebug("Current /ardrone/front/image_raw READY=>")
 
-            except:
-                rospy.logerr("Current /ardrone/bottom/image_raw not ready yet, retrying for getting front_camera_rgb_image_raw")
-        return self.front_camera_rgb_image_raw
+    #         except:
+    #             rospy.logerr("Current /drone/front_camera/image_raw not ready yet, retrying for getting front_camera_rgb_image_raw")
+    #     return self.front_camera_rgb_image_raw
 
 
-    def _check_down_camera_rgb_image_raw_ready(self):
-        self.down_camera_rgb_image_raw = None
-        rospy.logdebug("Waiting for /ardrone/down_camera/image_raw to be READY...")
-        while self.down_camera_rgb_image_raw is None and not rospy.is_shutdown():
-            try:
-                self.down_camera_rgb_image_raw = rospy.wait_for_message("/ardrone/bottom/image_raw", Image, timeout=5.0)
-                rospy.logdebug("Current /ardrone/down_camera/image_raw READY=>")
+    # def _check_down_camera_rgb_image_raw_ready(self):
+    #     self.down_camera_rgb_image_raw = None
+    #     rospy.logdebug("Waiting for /ardrone/down_camera/image_raw to be READY...")
+    #     while self.down_camera_rgb_image_raw is None and not rospy.is_shutdown():
+    #         try:
+    #             self.down_camera_rgb_image_raw = rospy.wait_for_message("/ardrone/bottom/image_raw", Image, timeout=5.0)
+    #             rospy.logdebug("Current /ardrone/down_camera/image_raw READY=>")
 
-            except:
-                rospy.logerr("Current /ardrone/down_camera/image_raw not ready yet, retrying for getting down_camera_rgb_image_raw")
-        return self.down_camera_rgb_image_raw
+    #         except:
+    #             rospy.logerr("Current /ardrone/down_camera/image_raw not ready yet, retrying for getting down_camera_rgb_image_raw")
+    #     return self.down_camera_rgb_image_raw
         
 
     def _check_imu_ready(self):
@@ -182,6 +182,22 @@ class ParrotDroneEnv(robot_gazebo_env.RobotGazeboEnv):
         
         
             
+    def _check_gt_pose_ready(self):
+        self.gt_gazebo_pose = None
+        rospy.logdebug("Waiting for /ardrone/gt_pose to be READY...")
+        while self.gt_gazebo_pose is None and not rospy.is_shutdown():
+            try:
+                self.gt_gazebo_pose = rospy.wait_for_message("/ground_truth/state", Odometry, timeout=5.0)
+                
+                rospy.logdebug("Current /ardrone/gt_pose READY=>")
+
+            except:
+                rospy.logerr("Current /ardrone/gt_pose not ready yet, retrying for getting gt_pose")
+
+        self.gt_pose = self.gt_gazebo_pose.pose.pose
+        return self.gt_pose
+
+
     # def _check_gt_pose_ready(self):
     #     self.gt_pose = None
     #     rospy.logdebug("Waiting for /ardrone/gt_pose to be READY...")
@@ -195,26 +211,10 @@ class ParrotDroneEnv(robot_gazebo_env.RobotGazeboEnv):
     #             rospy.logerr("Current /ardrone/gt_pose not ready yet, retrying for getting gt_pose")
 
     #     print(type(self.gt_pose)== LinkStates)
-    #     return self.gt_pose.pose[11]
-
-
-    def _check_gt_pose_ready(self):
-        self.gt_pose = None
-        rospy.logdebug("Waiting for /ardrone/gt_pose to be READY...")
-        while self.gt_pose is None and not rospy.is_shutdown():
-            try:
-                self.gt_pose = rospy.wait_for_message("/gazebo/link_states", LinkStates, timeout=5.0)
-                print(self.gt_pose.pose[11])
-                rospy.logdebug("Current /ardrone/gt_pose READY=>")
-
-            except:
-                rospy.logerr("Current /ardrone/gt_pose not ready yet, retrying for getting gt_pose")
-
-        print(type(self.gt_pose)== LinkStates)
-        if type(self.gt_pose)== LinkStates :
-            return self.gt_pose.pose[1]
-        else:
-        	return self.gt_pose
+    #     if type(self.gt_pose)== LinkStates :
+    #         return self.gt_pose.pose[1]
+    #     else:
+    #     	return self.gt_pose
 
 
 
@@ -223,16 +223,17 @@ class ParrotDroneEnv(robot_gazebo_env.RobotGazeboEnv):
         
             
     def _check_gt_vel_ready(self):
-        self.gt_vel = None
+        self.gt_gazebo_vel = None
         rospy.logdebug("Waiting for /ardrone/gt_vel to be READY...")
-        while self.gt_vel is None and not rospy.is_shutdown():
+        while self.gt_gazebo_vel is None and not rospy.is_shutdown():
             try:
-                self.gt_vel = rospy.wait_for_message("/cmd_vel", Twist, timeout=5.0)
+                self.gt_gazebo_vel = rospy.wait_for_message("/ground_truth/state", Odometry, timeout=5.0)
                 rospy.logdebug("Current /ardrone/gt_vel READY=>")
 
             except:
                 rospy.logerr("Current /ardrone/gt_vel not ready yet, retrying for getting gt_vel")
 
+        self.gt_vel = self.gt_gazebo_vel.twist.twist
         return self.gt_vel
 
 
@@ -242,7 +243,7 @@ class ParrotDroneEnv(robot_gazebo_env.RobotGazeboEnv):
         rospy.logdebug("Waiting for Depth Camera to be READY...")
         while self.depth_camera_image_raw is None and not rospy.is_shutdown():
             try:
-                self.depth_camera_image_raw = rospy.wait_for_message("DEPTH_CAMERA_TOPIC", DEPTH_CAMERA_MSG_TYPE, timeout=5.0)
+                self.depth_camera_image_raw = rospy.wait_for_message("/r200/camera/depth/image_raw", Image, timeout=5.0)
                 rospy.logdebug("Current Depth Camera READY=>")
 
             except:
@@ -251,11 +252,11 @@ class ParrotDroneEnv(robot_gazebo_env.RobotGazeboEnv):
         return self.depth_camera_image_raw
         
 
-    def _down_camera_rgb_image_raw_callback(self, data):
-        self.down_camera_rgb_image_raw = data
+    # def _down_camera_rgb_image_raw_callback(self, data):
+    #     self.down_camera_rgb_image_raw = data
     
-    def _front_camera_rgb_image_raw_callback(self, data):
-        self.front_camera_rgb_image_raw = data
+    # def _front_camera_rgb_image_raw_callback(self, data):
+    #     self.front_camera_rgb_image_raw = data
         
     def _imu_callback(self, data):
         self.imu = data
@@ -264,10 +265,10 @@ class ParrotDroneEnv(robot_gazebo_env.RobotGazeboEnv):
         self.sonar = data
         
     def _gt_pose_callback(self, data):
-        self.gt_pose = data.pose[1]
+        self.gt_pose = data.pose.pose
         
     def _gt_vel_callback(self, data):
-        self.gt_vel = data
+        self.gt_vel = data.twist.twist
 
     # Depth camera callback defined by Utsav
     def _depth_camera_callback(self, data):
@@ -526,11 +527,11 @@ class ParrotDroneEnv(robot_gazebo_env.RobotGazeboEnv):
         return numpy.allclose(ref_value_array, check_value_array, atol=epsilon)
     
 
-    def get_down_camera_rgb_image_raw(self):
-        return self.down_camera_rgb_image_raw
+    # def get_down_camera_rgb_image_raw(self):
+    #     return self.down_camera_rgb_image_raw
     
-    def get_front_camera_rgb_image_raw(self):
-        return self.front_camera_rgb_image_raw
+    # def get_front_camera_rgb_image_raw(self):
+    #     return self.front_camera_rgb_image_raw
     
     def get_imu(self):
         return self.imu
@@ -539,8 +540,14 @@ class ParrotDroneEnv(robot_gazebo_env.RobotGazeboEnv):
         return self.sonar
         
     def get_gt_pose(self):
-        return self.gt_pose.pose[1]
+        return self.gt_pose
         
     def get_gt_vel(self):
         return self.gt_vel
+
+    # Function added to get depth camera images used in Task environment (Added by Utsav)
+
+    def get_depth_camera_image_raw(self):
+    	return self.depth_camera_image_raw
+
 

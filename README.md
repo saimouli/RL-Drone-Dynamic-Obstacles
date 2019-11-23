@@ -19,3 +19,12 @@ This is because you might not be using python3.6, so you have to find the versio
 * Refer following links for more info.
  https://medium.com/@beta_b0t/how-to-setup-ros-with-python-3-44a69ca36674
  https://answers.ros.org/question/326226/importerror-dynamic-module-does-not-define-module-export-function-pyinit__tf2/
+
+
+## Training iterations
+#### 1. 10X10 static scene
+World file name - /RL-Drone-Dynamic-Obstacles/tum_simulator/cvg_sim_gazebo/worlds/10X10_static.world
+
+
+
+

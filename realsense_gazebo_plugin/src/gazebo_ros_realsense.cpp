@@ -1,5 +1,6 @@
 #include "realsense_gazebo_plugin/gazebo_ros_realsense.h"
 #include <sensor_msgs/fill_image.h>
+#include <sensor_msgs/distortion_models.h> //Added by Utsav
 
 namespace
 {
@@ -143,6 +144,14 @@ namespace
     info_msg.width = image.width;
 
     float focal = 0.5 * image.width / tan(0.5 * horizontal_fov);
+
+    info_msg.distortion_model = sensor_msgs::distortion_models::PLUMB_BOB;
+    //info_msg.distortion_model = "PLUMB_BOB";
+    //info_msg.D[0] = 0.0;
+    //info_msg.D[1] = 0.0;
+    //info_msg.D[2] = 0.0;
+    //info_msg.D[3] = 0.0;
+    //info_msg.D[4] = 0.0;
 
     info_msg.K[0] = focal;
     info_msg.K[4] = focal;

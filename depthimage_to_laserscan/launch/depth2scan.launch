@@ -1,0 +1,12 @@
+<launch>
+  <arg name="range_max" value="3.0" />
+  
+  <node pkg="depthimage_to_laserscan" type="depthimage_to_laserscan" name="depthimage_to_laserscan">
+    <remap from="camera_info" to="/r200/camera/depth/camera_info" />
+    <remap from="image" to="/r200/camera/depth/image_raw" />
+    <remap from="scan" to="/r200/scan" />
+    <param name="output_frame_id" value="CameraDepth_frame" />
+    <param name="scan_height" value="10" />
+    <param name="range_max" value="$(arg range_max)" />
+  </node>
+</launch>

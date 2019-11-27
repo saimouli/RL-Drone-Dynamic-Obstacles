@@ -199,6 +199,10 @@ class ParrotDroneGotoEnv(parrotdrone_env.ParrotDroneEnv):
         # We get the sonar value
         sonar = self.get_sonar()
         sonar_value = sonar.range
+
+        # Get lidar data from the robot environment added by Utsav
+        lidar_data = self.get_fake_lidar_data()
+        lidar_ranges = numpy.array(lidar_data.ranges)
         
         """
         observations = [    round(gt_pose.position.x, 1),
@@ -216,7 +220,7 @@ class ParrotDroneGotoEnv(parrotdrone_env.ParrotDroneEnv):
                             round(roll,1),
                             round(pitch,1),
                             round(yaw,1),
-                            round(sonar_value,1)]
+                            round(sonar_value,1), lidar_ranges]  #Lidar data added in observations by Utsav
                                                                 
         
         rospy.logdebug("Observations==>"+str(observations))
@@ -246,11 +250,17 @@ class ParrotDroneGotoEnv(parrotdrone_env.ParrotDroneEnv):
         current_orientation.z = observations[5]
         
         sonar_value = observations[6]
+
+
+        lidar_values = observations[7]  #Added by Utsav
         
         is_inside_workspace_now = self.is_inside_workspace(current_position)
         sonar_detected_something_too_close_now = self.sonar_detected_something_too_close(sonar_value)
         drone_flipped = self.drone_has_flipped(current_orientation)
         has_reached_des_point = self.is_in_desired_position(current_position, self.desired_point_epsilon)
+
+        # Collision check implemented by Utsav
+        lidar_detected_something_too_close = self.lidar_detected_something_too_close(lidar_values)
         
         rospy.logwarn(">>>>>> DONE RESULTS <<<<<")
         if not is_inside_workspace_now:
@@ -272,9 +282,15 @@ class ParrotDroneGotoEnv(parrotdrone_env.ParrotDroneEnv):
             rospy.logerr("has_reached_des_point="+str(has_reached_des_point))
         else:
             rospy.logwarn("has_reached_des_point="+str(has_reached_des_point))
+
+        # Front collision check log implemented by Utsav
+        if lidar_detected_something_too_close:
+            rospy.logerr("lidar_detected_something_too_close="+str(lidar_detected_something_too_close))
+        else:
+            rospy.logwarn("lidar_detected_something_too_close="+str(lidar_detected_something_too_close))
         
         # We see if we are outside the Learning Space
-        episode_done = not(is_inside_workspace_now) or sonar_detected_something_too_close_now or drone_flipped or has_reached_des_point
+        episode_done = not(is_inside_workspace_now) or sonar_detected_something_too_close_now or drone_flipped or has_reached_des_point or lidar_detected_something_too_close
 
         if episode_done:
             rospy.logerr("episode_done====>"+str(episode_done))
@@ -412,6 +428,16 @@ class ParrotDroneGotoEnv(parrotdrone_env.ParrotDroneEnv):
                     has_flipped = False
         
         return has_flipped
+
+    # Front collision check function implemented by Utsav
+
+    def lidar_detected_something_too_close(self, lidar_values):
+        detected_something_close = False
+        np.nan_to_num(lidar_values, copy = False, nan = 3.1)
+        if (float(np.amin(lidar_values)) < 0.5):
+            detected_something_close = True
+        return detected_something_close
+
         
     def get_distance_from_desired_point(self, current_position):
         """

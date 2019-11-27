@@ -81,8 +81,10 @@ class ParrotDroneEnv(robot_gazebo_env.RobotGazeboEnv):
         rospy.Subscriber("/ardrone/sonar", Range, self._sonar_callback)
         rospy.Subscriber("/ground_truth/state", Odometry, self._gt_pose_callback)
         rospy.Subscriber("/ground_truth/state", Odometry, self._gt_vel_callback)
-        # Subscriber added by Utsav
+        # Subscribers added by Utsav
         rospy.Subscriber("/r200/camera/depth/image_raw", Image, self._depth_camera_callback)
+        rospy.Subscriber("/r200/scan", LaserScan, self._fake_lidar_callback)
+
   
 
 
@@ -122,6 +124,7 @@ class ParrotDroneEnv(robot_gazebo_env.RobotGazeboEnv):
         self._check_gt_vel_ready()
         # sensor check added by Utsav
         self._check_depth_camera_image_raw_ready()
+        self._check_fake_lidar_ready()
 
         rospy.logdebug("ALL SENSORS READY")
 
@@ -198,25 +201,6 @@ class ParrotDroneEnv(robot_gazebo_env.RobotGazeboEnv):
         return self.gt_pose
 
 
-    # def _check_gt_pose_ready(self):
-    #     self.gt_pose = None
-    #     rospy.logdebug("Waiting for /ardrone/gt_pose to be READY...")
-    #     while self.gt_pose is None and not rospy.is_shutdown():
-    #         try:
-    #             self.gt_pose = rospy.wait_for_message("/gazebo/link_states", LinkStates, timeout=5.0)
-    #             print(self.gt_pose.pose[11])
-    #             rospy.logdebug("Current /ardrone/gt_pose READY=>")
-
-    #         except:
-    #             rospy.logerr("Current /ardrone/gt_pose not ready yet, retrying for getting gt_pose")
-
-    #     print(type(self.gt_pose)== LinkStates)
-    #     if type(self.gt_pose)== LinkStates :
-    #         return self.gt_pose.pose[1]
-    #     else:
-    #     	return self.gt_pose
-
-
 
    
         
@@ -250,6 +234,20 @@ class ParrotDroneEnv(robot_gazebo_env.RobotGazeboEnv):
                 rospy.logerr("Current Depth Camera not ready yet, retrying for getting gt_vel")
 
         return self.depth_camera_image_raw
+
+    # Fake lidar subscriber check function added by Utsav
+    def _check_fake_lidar_ready(self):
+        self.fake_lidar_data = None
+        rospy.logdebug("Waiting for Fake Lidar to be READY...")
+        while self.fake_lidar_data is None and not rospy.is_shutdown():
+            try:
+                self.fake_lidar_data = rospy.wait_for_message("/r200/scan", LaserScan, timeout=5.0)
+                rospy.logdebug("Current Fake Lidar READY=>")
+
+            except:
+                rospy.logerr("Current fake lidar not ready yet, retrying for getting gt_vel")
+
+        return self.fake_lidar_data
         
 
     # def _down_camera_rgb_image_raw_callback(self, data):
@@ -273,6 +271,14 @@ class ParrotDroneEnv(robot_gazebo_env.RobotGazeboEnv):
     # Depth camera callback defined by Utsav
     def _depth_camera_callback(self, data):
     	self.depth_camera_image_raw = data
+
+    # Fake Lidar callback defined by Utsav
+    def _fake_lidar_callback(self.data):
+        self.fake_lidar_data = data
+
+
+
+
 
 
     def _check_all_publishers_ready(self):

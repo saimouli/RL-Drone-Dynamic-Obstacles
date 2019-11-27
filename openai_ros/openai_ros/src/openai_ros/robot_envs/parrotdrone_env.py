@@ -556,4 +556,9 @@ class ParrotDroneEnv(robot_gazebo_env.RobotGazeboEnv):
     def get_depth_camera_image_raw(self):
     	return self.depth_camera_image_raw
 
+    # Function added to get fake lidar data used in Task environment (Added by Utsav)
+
+    def get_fake_lidar_data(self):
+        return self.fake_lidar_data
+
 

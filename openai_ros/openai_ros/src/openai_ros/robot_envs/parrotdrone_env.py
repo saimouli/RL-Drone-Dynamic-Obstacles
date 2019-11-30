@@ -17,6 +17,8 @@ from gazebo_msgs.msg import LinkStates
 
 
 
+
+
 class ParrotDroneEnv(robot_gazebo_env.RobotGazeboEnv):
     """Superclass for all CubeSingleDisk environments.
     """
@@ -50,7 +52,7 @@ class ParrotDroneEnv(robot_gazebo_env.RobotGazeboEnv):
         Args:
         """
         rospy.logdebug("Start ParrotDroneEnv INIT...")
-        # Variables that we give through the constructor.
+        # Variables that we give datthrough the constructor.
         # None in this case
 
         # Internal Vars
@@ -66,6 +68,8 @@ class ParrotDroneEnv(robot_gazebo_env.RobotGazeboEnv):
                                             reset_controls=False,
                                             start_init_physics_parameters=False,
                                             reset_world_or_sim="WORLD")
+
+
 
 
 
@@ -273,7 +277,7 @@ class ParrotDroneEnv(robot_gazebo_env.RobotGazeboEnv):
     	self.depth_camera_image_raw = data
 
     # Fake Lidar callback defined by Utsav
-    def _fake_lidar_callback(self.data):
+    def _fake_lidar_callback(self,data):
         self.fake_lidar_data = data
 
 

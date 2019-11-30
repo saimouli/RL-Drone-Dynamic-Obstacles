@@ -71,7 +71,7 @@ if __name__ == '__main__':
         return is_solved
 
     # Initialises the algorithm that we are going to use for learning
-    act = ppo2.learn(env = env, network='mlp',total_timesteps=64)
+    act = ppo2.learn(env = env, network='cnn',total_timesteps=64)
         
         
     

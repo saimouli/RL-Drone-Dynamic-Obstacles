@@ -9,11 +9,19 @@ from geometry_msgs.msg import Point
 from geometry_msgs.msg import Vector3
 from tf.transformations import euler_from_quaternion
 #libraries added by Utsav
-from cv_bridge import CvBridge, CvBridgeError
 sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import cv2
 sys.path.append('/opt/ros/kinetic/lib/python2.7/dist-packages')
+
+print("Importing CV_Bridge library")
+from cv_bridge import CvBridge, CvBridgeError
+print("Successfully imported Cv_bridge library")
+# print("Importing CV_Bridge library")
+# from cv_bridge import CvBridge, CvBridgeError
+# print("Successfully imported Cv_bridge library")
+
 from geometry_msgs.msg import Twist
+print("Imported all the libraries")
 
 
 timestep_limit_per_episode = 10000 # Can be any Value
@@ -31,11 +39,15 @@ class ParrotDroneGotoEnv(parrotdrone_env.ParrotDroneEnv):
         """
         
         # Only variable needed to be set here
+        print("In initialization step")
         number_actions = rospy.get_param('/drone/n_actions')
-        # self.action_space = spaces.Discrete(number_actions)
+        number_actions = 2
+        self.action_space = spaces.Discrete(number_actions) # 
 
         #Action space added by Utsav
-        self.action_space = gym.spaces.Box(numpy.array([-1,1]),numpy.array([-1,1]),dtype=numpy.float32)
+        print("Creating action spaces")
+        # self.action_space = gym.spaces.Box(numpy.array([-1,1]),numpy.array([-1,1]),dtype=numpy.float32)
+        print("created action spaces")
         
         # We set the reward range, which is not compulsory but here we do it.
         self.reward_range = (-numpy.inf, numpy.inf)
@@ -106,10 +118,16 @@ class ParrotDroneGotoEnv(parrotdrone_env.ParrotDroneEnv):
         # self.observation_space = spaces.Box(low, high)
 
         # Cv bridge added by Utsav
+        print("Creating a cv_bridge object")
         self.bridge = CvBridge()
+        print("Successfully created an object")
 
         # Added new observation space by Utsav
-        self.observation_space = gym.spaces.Dict(dict(distance_to_goal = spaces.Box(low = 0, high = 100, shape=[1,]), current_heading_angle = gym.spaces.Box(low = -3.15, high = 3.15, shape = [1,]),depth_data = spaces.Box(low = 0, high = 255, shape = [480,640,3])))
+        # self.observation_space = gym.spaces.Dict({
+        #     'distance_to_goal' : spaces.Box(low = 0, high = 100, shape=[1,]),
+        #      'current_heading_angle' : gym.spaces.Box(low = -3.15, high = 3.15, shape = [1,]), 
+        #      'depth_data' : spaces.Box(low = 0, high = 255, shape = [480,640,3])})
+        self.observation_space = gym.spaces.Box(low = 0, high = 255, shape = [480,640,3])
 
         
         rospy.logdebug("ACTION SPACES TYPE===>"+str(self.action_space))
@@ -169,15 +187,15 @@ class ParrotDroneGotoEnv(parrotdrone_env.ParrotDroneEnv):
         
         rospy.logdebug("Start Set Action ==>"+str(action))
         # We convert the actions to speed movements to send to the parent class of Parrot
-        # linear_speed_vector = Vector3()
-        # angular_speed = 0.0
+        linear_speed_vector = Vector3()
+        angular_speed = 0.0
         
-        # if action == 0: #FORWARDS
-        #     linear_speed_vector.x = self.linear_forward_speed
-        #     self.last_action = "FORWARDS"
-        # elif action == 1: #BACKWARDS
-        #     linear_speed_vector.x = -1*self.linear_forward_speed
-        #     self.last_action = "BACKWARDS"
+        if action == 0: #FORWARDS
+            linear_speed_vector.x = self.linear_forward_speed
+            self.last_action = "FORWARDS"
+        elif action == 1: #BACKWARDS
+            linear_speed_vector.x = -1*self.linear_forward_speed
+            self.last_action = "BACKWARDS"
         # elif action == 2: #STRAFE_LEFT
         #     linear_speed_vector.y = self.linear_forward_speed
         #     self.last_action = "STRAFE_LEFT"
@@ -192,11 +210,11 @@ class ParrotDroneGotoEnv(parrotdrone_env.ParrotDroneEnv):
         #     self.last_action = "DOWN"
 
         # Added by Utsav
-        linear_speed = Vector3()
-        linear_speed.x = action[0]
+        # linear_speed = Vector3()
+        # linear_speed.x = action[0]
 
         
-        angular_speed = action[1]
+        # angular_speed = action[1]
 
 
         
@@ -237,7 +255,7 @@ class ParrotDroneGotoEnv(parrotdrone_env.ParrotDroneEnv):
 
         # Depth message to 3 channel gray scale image transform added by Utsav
         try:
-            self.depth_image= self.bridge.imgmsg_to_cv2(data, "16UC1")
+            self.depth_image= self.bridge.imgmsg_to_cv2(depth_data, "16UC1")
         except CvBridgeError as e:
             print(e)
 
@@ -277,7 +295,8 @@ class ParrotDroneGotoEnv(parrotdrone_env.ParrotDroneEnv):
         current_position.y = gt_pose.position.y
         current_position.z = gt_pose.position.z
 
-        observations = [self.get_distance_from_desired_point(current_position), round(yaw, 1), color_depth]
+        observations = [color_depth]
+        # observations = [depth_img]
                                                                 
         
         rospy.logdebug("Observations==>"+str(observations))
@@ -296,20 +315,44 @@ class ParrotDroneGotoEnv(parrotdrone_env.ParrotDroneEnv):
         
         episode_done = False
         
+        # current_position = Point()
+        # current_position.x = observations[0]
+        # current_position.y = observations[1]
+        # current_position.z = observations[2]
+        
+        # current_orientation = Point()
+        # current_orientation.x = observations[3]
+        # current_orientation.y = observations[4]
+        # current_orientation.z = observations[5]
+        
+        # sonar_value = observations[6]
+
+
+        # lidar_values = observations[7]  #Added by Utsav
+
+        # Added by Utsav
+        gt_pose = self.get_gt_pose()
+        roll, pitch, yaw = self.get_orientation_euler(gt_pose.orientation)
+        sonar = self.get_sonar()
+        sonar_value = sonar.range
+        lidar_data = self.get_fake_lidar_data()
+        lidar_ranges = numpy.array(lidar_data.ranges)
         current_position = Point()
-        current_position.x = observations[0]
-        current_position.y = observations[1]
-        current_position.z = observations[2]
+        current_position.x = round(gt_pose.position.x, 1)
+        current_position.y = round(gt_pose.position.y, 1)
+        current_position.z = round(gt_pose.position.z, 1)
         
         current_orientation = Point()
-        current_orientation.x = observations[3]
-        current_orientation.y = observations[4]
-        current_orientation.z = observations[5]
+        current_orientation.x = round(roll, 1)
+        current_orientation.y = round(pitch, 1)
+        current_orientation.z = round(yaw, 1)
         
-        sonar_value = observations[6]
+        sonar_value = round(sonar_value,1)
 
 
-        lidar_values = observations[7]  #Added by Utsav
+        lidar_values = lidar_ranges
+
+
         
         is_inside_workspace_now = self.is_inside_workspace(current_position)
         sonar_detected_something_too_close_now = self.sonar_detected_something_too_close(sonar_value)
@@ -358,10 +401,19 @@ class ParrotDroneGotoEnv(parrotdrone_env.ParrotDroneEnv):
 
     def _compute_reward(self, observations, done):
 
+        # current_position = Point()
+        # current_position.x = observations[0]
+        # current_position.y = observations[1]
+        # current_position.z = observations[2]
+
+        # Added by Utsav
         current_position = Point()
-        current_position.x = observations[0]
-        current_position.y = observations[1]
-        current_position.z = observations[2]
+        gt_pose = self.get_gt_pose()
+        current_position.x = round(gt_pose.position.x, 1)
+        current_position.y = round(gt_pose.position.y, 1)
+        current_position.z = round(gt_pose.position.z, 1)
+
+
 
         distance_from_des_point = self.get_distance_from_desired_point(current_position)
         distance_difference =  distance_from_des_point - self.previous_distance_from_des_point

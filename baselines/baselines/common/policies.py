@@ -33,7 +33,8 @@ class PolicyWithValue(object):
 
         """
 
-        self.X = observations
+        self.X = observations #list
+        self.obs_space = env.observation_space # Will be used to get keys
         self.state = tf.constant([])
         self.initial_state = None
         self.__dict__.update(tensors)
@@ -63,9 +64,18 @@ class PolicyWithValue(object):
             self.vf = fc(vf_latent, 'vf', 1)
             self.vf = self.vf[:,0]
 
-    def _evaluate(self, variables, observation, **extra_feed):
+    def _evaluate(self, variables, observation, **extra_feed): # 480,640,3 ,1,1
         sess = self.sess
-        feed_dict = {self.X: adjust_shape(self.X, observation)}
+        # feed_dict = deep.copy of onservation 
+
+        if (isinstance(self.X,list)): 
+
+            for eachKeys in self.obs_space:
+                count = 0
+                feed_dict = {eachKeys: adjust_shape(self.X[count], observation[count])}
+                count += 1
+
+        feed_dict = {self.X: adjust_shape(self.X, observation)} #  
         for inpt_name, data in extra_feed.items():
             if inpt_name in self.__dict__.keys():
                 inpt = self.__dict__[inpt_name]
@@ -124,9 +134,13 @@ def build_policy(env, policy_network, value_network=None,  normalize_observation
         policy_network = get_network_builder(network_type)(**policy_kwargs)
 
     def policy_fn(nbatch=None, nsteps=None, sess=None, observ_placeholder=None):
+        print("Observation space being passed to policies.py {}".format(env.observation_space))
         ob_space = env.observation_space
+        print("Observation space is in policies.py {}".format(ob_space))
 
+        
         X = observ_placeholder if observ_placeholder is not None else observation_placeholder(ob_space, batch_size=nbatch)
+        print("The shape of the placeholder in policies.py {}".format(X.shape))
 
         extra_tensors = {}
 
@@ -168,6 +182,79 @@ def build_policy(env, policy_network, value_network=None,  normalize_observation
         policy = PolicyWithValue(
             env=env,
             observations=X,
+            latent=policy_latent,
+            vf_latent=vf_latent,
+            sess=sess,
+            estimate_q=estimate_q,
+            **extra_tensors
+        )
+        return policy
+
+    return policy_fn
+
+# for now this function accepts only boxes 
+def build_policy_multiple_inputs(env, policy_network, value_network=None,  normalize_observations=False, estimate_q=False, **policy_kwargs):
+    if isinstance(policy_network, str):
+        network_type = policy_network
+        policy_network = get_network_builder(network_type)(**policy_kwargs) #custom model 3 inputs 
+
+    def policy_fn(nbatch=None, nsteps=None, sess=None, observ_placeholder=None):
+        print("Observation space being passed to policies.py {}".format(env.observation_space))
+        ob_space = env.observation_space
+        print("Observation space is in policies.py {}".format(ob_space))
+
+        #placeholder list by Sai
+        ph_list = [] 
+
+        if isinstace(ob_space,dict): #will accept dictionaries for now 
+            for eachKey in ob_space:
+                ph_list.append(observation_placeholder(ob_space[eachKey] ,batch_size=nbatch))
+
+        print("The shape of the placeholder list (ph_list) in policies.py {}".format(ph_list.shape))
+
+        extra_tensors = {}
+
+        if normalize_observations and ph_list[0].dtype == tf.float32:
+            encoded_x, rms = _normalize_clip_observation(X)
+            extra_tensors['rms'] = rms
+        else:
+            encoded_x = ph_list
+
+        for eachKey in ob_space:
+            count = 0    
+            encoded_x[count] = (encode_observation(ob_space[eachKey], ph_list[count]))
+            count += 1
+
+        with tf.variable_scope('pi', reuse=tf.AUTO_REUSE):
+            policy_latent = policy_network(encoded_x) # encoded_x is the list of encoded ph
+            # if isinstance(policy_latent, tuple):
+            #     policy_latent, recurrent_tensors = policy_latent
+
+            #     if recurrent_tensors is not None:
+            #         # recurrent architecture, need a few more steps
+            #         nenv = nbatch // nsteps
+            #         assert nenv > 0, 'Bad input for recurrent policy: batch size {} smaller than nsteps {}'.format(nbatch, nsteps)
+            #         policy_latent, recurrent_tensors = policy_network(encoded_x, nenv)
+            #         extra_tensors.update(recurrent_tensors)
+
+
+        _v_net = value_network
+
+        if _v_net is None or _v_net == 'shared':
+            vf_latent = policy_latent
+        else:
+            if _v_net == 'copy':
+                _v_net = policy_network
+            else:
+                assert callable(_v_net)
+
+            with tf.variable_scope('vf', reuse=tf.AUTO_REUSE):
+                # TODO recurrent architectures are not supported with value_network=copy yet
+                vf_latent = _v_net(encoded_x)
+
+        policy = PolicyWithValue(
+            env=env,
+            observations=ph_list,
             latent=policy_latent,
             vf_latent=vf_latent,
             sess=sess,

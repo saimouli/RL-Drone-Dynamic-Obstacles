@@ -47,6 +47,7 @@ class Runner(AbstractEnvRunner):
                 maybeepinfo = info.get('episode')
                 if maybeepinfo: epinfos.append(maybeepinfo)
             mb_rewards.append(rewards)
+            print("debugging mb_rewards after append {}".format(mb_rewards))
         #batch of steps to batch of rollouts
         mb_obs = np.asarray(mb_obs, dtype=self.obs.dtype)
         mb_rewards = np.asarray(mb_rewards, dtype=np.float32)
@@ -57,9 +58,12 @@ class Runner(AbstractEnvRunner):
         last_values = self.model.value(self.obs, S=self.states, M=self.dones)
 
         # discount/bootstrap off value fn
-        mb_returns = np.zeros_like(mb_rewards)
-        mb_advs = np.zeros_like(mb_rewards)
+        mb_returns = np.zeros_like(mb_rewards) # 8,1
+        print("debugging mb_return shape {}".format(mb_returns.shape))
+        mb_advs = np.zeros_like(mb_rewards) #8,1
+        print("debugging mb_adv shape {}".format(mb_rewards.shape))
         lastgaelam = 0
+
         for t in reversed(range(self.nsteps)):
             if t == self.nsteps - 1:
                 nextnonterminal = 1.0 - self.dones
@@ -69,15 +73,35 @@ class Runner(AbstractEnvRunner):
                 nextvalues = mb_values[t+1]
             delta = mb_rewards[t] + self.gamma * nextvalues * nextnonterminal - mb_values[t]
             mb_advs[t] = lastgaelam = delta + self.gamma * self.lam * nextnonterminal * lastgaelam
+
+        print("debugging mb_values after append {}".format(mb_values))
+        print("debugging mb_advs after append {}".format(mb_advs))
+        # print("mb_values is {}".format(np.shape(mb_values)[0],1))
+        # print("mb_advs is {}".format(np.shape(mb_advs)[0],1))
+        mb_values.shape = (np.shape(mb_values)[0],1)
+        mb_advs.shape = (np.shape(mb_advs)[0],1)
         mb_returns = mb_advs + mb_values
+        print("The output sum shape {}".format(mb_returns.shape))
+
+        # Added by Sai
+        mb_dones.shape = (np.shape(mb_dones)[0],1)
+
         return (*map(sf01, (mb_obs, mb_returns, mb_dones, mb_actions, mb_values, mb_neglogpacs)),
             mb_states, epinfos)
+        
 # obs, returns, masks, actions, values, neglogpacs, states = runner.run()
 def sf01(arr):
     """
     swap and then flatten axes 0 and 1
     """
     s = arr.shape
+    print("-------------------------------")
+    print("The array in s {}".format(arr))
+    print("Type of the array in sf01 {}".format(type(arr)))
+    print("shape in sf01 {}".format(s))
+    print("The return array after the operation {}".format(arr.swapaxes(0, 1).reshape(s[0] * s[1], *s[2:]))) #( 8 * 2 ,)
+    print("After reshape {}".format(arr.swapaxes(0, 1).reshape(s[0] * s[1], *s[2:]).shape))
+    print("--------------------------------")
     return arr.swapaxes(0, 1).reshape(s[0] * s[1], *s[2:])
 
 

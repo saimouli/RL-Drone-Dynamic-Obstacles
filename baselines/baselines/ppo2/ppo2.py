@@ -87,6 +87,7 @@ def learn(*, network, env, total_timesteps, eval_env = None, seed=None, nsteps=8
     total_timesteps = int(total_timesteps)
 
     policy = build_policy(env, network, **network_kwargs)
+    print("Type of Policy in ppo2.py {}".format((policy)))
 
     # Get the nb of env
     #nenvs = env.num_envs
@@ -168,11 +169,14 @@ def learn(*, network, env, total_timesteps, eval_env = None, seed=None, nsteps=8
                 # Randomize the indexes
                 np.random.shuffle(inds)
                 # 0 to batch_size with batch_train_size step
+                print("Number of batches is {} and number of nbatch train {}".format(nbatch, nbatch_train))
                 for start in range(0, nbatch, nbatch_train):
                     end = start + nbatch_train
                     mbinds = inds[start:end]
                     slices = (arr[mbinds] for arr in (obs, returns, masks, actions, values, neglogpacs))
+                    print("Trainig the policy")
                     mblossvals.append(model.train(lrnow, cliprangenow, *slices))
+                    print("Policy Trained")
         else: # recurrent version
             assert nenvs % nminibatches == 0
             envsperbatch = nenvs // nminibatches

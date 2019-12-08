@@ -25,6 +25,7 @@ class Runner(AbstractEnvRunner):
         epinfos = []
 
         # For n in range number of steps
+        self.obs[:] = self.env.reset()
         for _ in range(self.nsteps):
             # Given observations, get action value and neglopacs
             # We already have self.obs because Runner superclass run self.obs[:] = env.reset() on init
@@ -95,13 +96,13 @@ def sf01(arr):
     swap and then flatten axes 0 and 1
     """
     s = arr.shape
-    print("-------------------------------")
-    print("The array in s {}".format(arr))
-    print("Type of the array in sf01 {}".format(type(arr)))
-    print("shape in sf01 {}".format(s))
-    print("The return array after the operation {}".format(arr.swapaxes(0, 1).reshape(s[0] * s[1], *s[2:]))) #( 8 * 2 ,)
-    print("After reshape {}".format(arr.swapaxes(0, 1).reshape(s[0] * s[1], *s[2:]).shape))
-    print("--------------------------------")
+    # print("-------------------------------")
+    # print("The array in s {}".format(arr))
+    # print("Type of the array in sf01 {}".format(type(arr)))
+    # print("shape in sf01 {}".format(s))
+    # print("The return array after the operation {}".format(arr.swapaxes(0, 1).reshape(s[0] * s[1], *s[2:]))) #( 8 * 2 ,)
+    # print("After reshape {}".format(arr.swapaxes(0, 1).reshape(s[0] * s[1], *s[2:]).shape))
+    # print("--------------------------------")
     return arr.swapaxes(0, 1).reshape(s[0] * s[1], *s[2:])
 
 

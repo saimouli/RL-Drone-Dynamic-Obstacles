@@ -126,6 +126,7 @@ class RobotGazeboEnv(gym.Env):
             self.gazebo.pauseSim()
             
         else:
+            print("Resetting gazebo environment")
             rospy.logwarn("DONT RESET CONTROLLERS")
             self.gazebo.unpauseSim()
             self._check_all_systems_ready()

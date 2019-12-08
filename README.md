@@ -24,7 +24,17 @@ This is because you might not be using python3.6, so you have to find the versio
 ## Training iterations
 #### 1. 10X10 static scene
 World file name - /RL-Drone-Dynamic-Obstacles/tum_simulator/cvg_sim_gazebo/worlds/10X10_static.world
+Launch file - /RL-Drone-Dynamic-Obstacles/tum_simulator/cvg_sim_gazebo/launch/static_without_walls.launch
+
+#### 2. static_without_walls scene
+World file name - /RL-Drone-Dynamic-Obstacles/tum_simulator/cvg_sim_gazebo/worlds/static_without_walls.world
+Launch file - /RL-Drone-Dynamic-Obstacles/tum_simulator/cvg_sim_gazebo/launch/static_without_walls.launch
 
 
+## Required packages
+1) pip install tensorflow-gpu==1.14
+2) pip install -U rospkg
+3) pip install joblib
+4) pip install gym
 
 

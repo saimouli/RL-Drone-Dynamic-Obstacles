@@ -71,7 +71,7 @@ if __name__ == '__main__':
         return is_solved
     try:
        # Initialises the algorithm that we are going to use for learning
-       act = ppo2.learn(env = env, network='cnn',total_timesteps=64)
+       act = ppo2.learn(env = env, network='cnn',total_timesteps=128)
     except rospy.ROSInteruptException:
     	print("Failed")
     	env.close()

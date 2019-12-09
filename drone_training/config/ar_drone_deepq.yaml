@@ -60,11 +60,11 @@ drone: #namespace
     min_sonar_value: 2
     max_sonar_value: 10
     work_space/x_max: 15
-    work_space/x_min: 1
+    work_space/x_min: -15
     work_space/y_max: 18
-    work_space/y_min: 1
+    work_space/y_min: -15
     work_space/z_max: 20
-    work_space/z_min: 0.5
+    work_space/z_min: 0.2
     max_roll: 1
     max_pitch: 2
     max_yaw: 3
